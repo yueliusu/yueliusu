@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://yueliusu.github.io/yueliusu/sitemap.xml
+Sitemap: https://yueliusu.top/sitemap.xml
