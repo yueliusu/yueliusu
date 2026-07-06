@@ -3,7 +3,7 @@
 一个静态单页个人主页，基于 [Sn0w](https://github.com/lin-snow/Sn0w) 模板（React + Vite + Tailwind v4）改造。
 所有文案、项目、文章、链接都集中在 [`src/content.ts`](src/content.ts) —— 改这一个文件就能改站内一切，无需碰组件代码。
 
-- **线上地址：** <https://yueliusu.top/>
+- **线上地址：** <https://www.yueliusu.top/>
 - **备用地址：** <https://yueliusu.github.io/yueliusu/>（DNS 未生效或自定义域名失效时用这个；但启用自定义域名后，本路径的资源会因 base 切到 `/` 而失效，详见下方"自定义域名"）
 - **仓库：** <https://github.com/yueliusu/yueliusu>
 - **作者：** [Code_流苏](https://blog.csdn.net/qq_51646682) — AI 应用开发 / 编程教程 / 计算机科普 / 工具安利
@@ -66,27 +66,25 @@ gh run watch              # 实时看最新一次
 gh run view --log-failed  # 查失败步骤的完整日志
 ```
 
-## 四、自定义域名 `yueliusu.top`
+## 四、自定义域名 `www.yueliusu.top`
 
-仓库根的 [`public/CNAME`](public/CNAME) 文件内容是 `yueliusu.top` —— Vite 构建时把它复制到 `dist/CNAME`，GitHub Pages 据此识别自定义域名，把站点的"根"从 `/<repo>/` 改成 `/`。
+仓库根的 [`public/CNAME`](public/CNAME) 文件内容是 `www.yueliusu.top` —— Vite 构建时把它复制到 `dist/CNAME`，GitHub Pages 据此识别自定义域名，把站点的"根"从 `/<repo>/` 改成 `/`。
 
-### 你需要在腾讯云 DNS 配的记录
+### 当前 DNS 配置（Cloudflare 管理）
 
-登录 [腾讯云 DNSPod 控制台](https://console.dnspod.cn/)，给域名 `yueliusu.top` 添加以下 4 条 A 记录 + 1 条 CNAME：
+域名 NS 已从 DNSPod 切到 Cloudflare（`chuck.ns.cloudflare.com` / `nelci.ns.cloudflare.com`），记录如下：
 
-| 类型 | 主机记录 | 记录值 | 说明 |
-|---|---|---|---|
-| A | `@` | `185.199.108.153` | GitHub Pages IPv4 |
-| A | `@` | `185.199.109.153` | GitHub Pages IPv4 |
-| A | `@` | `185.199.110.153` | GitHub Pages IPv4 |
-| A | `@` | `185.199.111.153` | GitHub Pages IPv4 |
-| CNAME | `www` | `yueliusu.github.io` | 让 `www.yueliusu.top` 也能访问 |
+| 类型 | 名称 | 记录值 | 代理 | 说明 |
+|---|---|---|---|---|
+| CNAME | `www` | `yueliusu.github.io` | DNS only 灰云 | **主站**，走 `*.github.io` wildcard 证书 |
+| A | `@` | `185.199.108.153` | DNS only 灰云 | 裸域备用（裸域证书偶发卡签发） |
+| A | `@` | `185.199.109.153` | DNS only 灰云 | 裸域备用 |
+| A | `@` | `185.199.110.153` | DNS only 灰云 | 裸域备用 |
+| A | `@` | `185.199.111.153` | DNS only 灰云 | 裸域备用 |
 
-> `@` 代表裸域名 `yueliusu.top` 本身。GitHub 推荐全部 4 条 A 记录都配上。
+> **为什么用 `www` 而不是裸域 `yueliusu.top`**：裸域 GitHub Pages HTTPS 证书需要 4 条 A 记录，且 Let's Encrypt ACME 验证在本域名偶发卡在 `authorization_created`。`www` 走 CNAME 到 `yueliusu.github.io`，复用 GitHub 已有的 `*.github.io` wildcard 证书，立即可用。
 
-### 配完 DNS 后
-
-DNS 生效（几分钟到数小时）后到这里检查并打开 HTTPS：
+### 检查并打开 HTTPS
 
 ```bash
 # 看 GitHub 是否已识别该域名
@@ -97,7 +95,7 @@ gh api -X PUT repos/yueliusu/yueliusu/pages \
   -F https_enforced=true -f build_type=workflow
 ```
 
-如果 `https://yueliusu.top/` 显示证书错误，是 GitHub 还在签发 Let’s Encrypt 证书，等 10~30 分钟。
+如果 `https://www.yueliusu.top/` 显示证书错误，是 GitHub 还在签发 Let’s Encrypt 证书，等 10~30 分钟。
 
 ### base 路径与备份访问
 
@@ -131,7 +129,7 @@ node scripts/make-icon.mjs
 | `src/components/` | 纯展示组件（intro / sections / desk） |
 | `src/index.css` | Tailwind + 纸张/便签/手绘风 token |
 | `index.html` | `<title>`、SEO meta、JSON-LD |
-| `public/CNAME` | 自定义域名声明（`yueliusu.top`） |
+| `public/CNAME` | 自定义域名声明（`www.yueliusu.top`） |
 | `public/{avatar,favicon-*}` | 头像 / favicon 全家桶 |
 | `vite.config.ts` | `base` 路径（自定义域名用 `/`，否则用 `/yueliusu/`） |
 | `.github/workflows/deploy.yml` | GitHub Actions 自动部署 |
