@@ -110,9 +110,34 @@ export const projects: Project[] = [
 
 export const artifacts: Entry[] = [
   {
+    label: "DeepSeek V4 Pro 测评：不只是更强，而是更适合复杂任务",
+    date: "2026.05",
+    href: "https://blog.csdn.net/qq_51646682/article/details/161323743",
+  },
+  {
+    label: "DeepSeek V4 Flash 测评：更快、更省，日常体验依旧很稳",
+    date: "2026.05",
+    href: "https://blog.csdn.net/qq_51646682/article/details/161289758",
+  },
+  {
     label: "一篇看懂 AI 进阶概念：MCP、Agent、Agent Skill",
     date: "2026.05",
     href: "https://blog.csdn.net/qq_51646682/article/details/160721590",
+  },
+  {
+    label: "一篇看懂现代 AI 的五大概念：LLM、Token、Context、Prompt、Tool",
+    date: "2026.05",
+    href: "https://blog.csdn.net/qq_51646682/article/details/160721057",
+  },
+  {
+    label: "GPT-5.1 深度解析：更智能更自然，日常体验依旧出色",
+    date: "2025.12",
+    href: "https://blog.csdn.net/qq_51646682/article/details/155914263",
+  },
+  {
+    label: "Gemini 3 Pro 深度解析：当 Google 真正学会 Deep Think",
+    date: "2025.12",
+    href: "https://blog.csdn.net/qq_51646682/article/details/155879672",
   },
   {
     label: "Doubao-Seed-Code 测评：强大的视觉编程模型",
@@ -120,9 +145,64 @@ export const artifacts: Entry[] = [
     href: "https://blog.csdn.net/qq_51646682/article/details/155143300",
   },
   {
+    label: "Qwen3-Max 深度解析：阿里最强 AI 大模型全面升级",
+    date: "2025.09",
+    href: "https://blog.csdn.net/qq_51646682/article/details/152041234",
+  },
+  {
     label: "DeepSeek-V3.1-Terminus 深度解析",
     date: "2025.09",
     href: "https://blog.csdn.net/qq_51646682/article/details/152003836",
+  },
+  {
+    label: "Seedream 4.0：对标 Nano Banana，4K 出图玩法多样",
+    date: "2025.09",
+    href: "https://blog.csdn.net/qq_51646682/article/details/151805825",
+  },
+  {
+    label: "Gemini in Chrome 深度解析：开启 AI 智能浏览时代",
+    date: "2025.09",
+    href: "https://blog.csdn.net/qq_51646682/article/details/151898129",
+  },
+  {
+    label: "AI 热点周报（09.14~09.20）",
+    date: "2025.09",
+    href: "https://blog.csdn.net/qq_51646682/article/details/151894701",
+  },
+  {
+    label: "Qwen3-Next 深度解析：3% 参数如何超越全参数模型",
+    date: "2025.09",
+    href: "https://blog.csdn.net/qq_51646682/article/details/151874264",
+  },
+  {
+    label: "AI 热点周报（8.31~9.6）",
+    date: "2025.09",
+    href: "https://blog.csdn.net/qq_51646682/article/details/151251792",
+  },
+  {
+    label: "AI 热点周报（8.24~8.30）",
+    date: "2025.08",
+    href: "https://blog.csdn.net/qq_51646682/article/details/151046642",
+  },
+  {
+    label: "Coze Studio 深度解析：字节开源，AI Agent 开发进入全民时代",
+    date: "2025.08",
+    href: "https://blog.csdn.net/qq_51646682/article/details/150698017",
+  },
+  {
+    label: "AI 热点周报（8.17~8.23）",
+    date: "2025.08",
+    href: "https://blog.csdn.net/qq_51646682/article/details/150646029",
+  },
+  {
+    label: "DeepSeek V3.1 深度解析：一个模型两种思维，迈向 Agent 时代",
+    date: "2025.08",
+    href: "https://blog.csdn.net/qq_51646682/article/details/150636193",
+  },
+  {
+    label: "AI 热点周报（8.10~8.16）",
+    date: "2025.08",
+    href: "https://blog.csdn.net/qq_51646682/article/details/150447179",
   },
   {
     label: "Qwen3-Coder 深度解析：实测惊艳的开源编程助手",
@@ -150,14 +230,14 @@ export const artifacts: Entry[] = [
     href: "https://blog.csdn.net/qq_51646682/article/details/148130612",
   },
   {
-    label: "《硬件视界1》什么是 N 卡和 A 卡？区别是什么？",
-    date: "2024.06",
-    href: "https://blog.csdn.net/qq_51646682/article/details/139883176",
-  },
-  {
     label: "VSCode 搭建 Python 编程环境 2024 新版图文安装教程",
     date: "2024.12",
     href: "https://blog.csdn.net/qq_51646682/article/details/144577810",
+  },
+  {
+    label: "《硬件视界1》什么是 N 卡和 A 卡？区别是什么？",
+    date: "2024.06",
+    href: "https://blog.csdn.net/qq_51646682/article/details/139883176",
   },
   {
     label: "IDEA2024 最新版详细图文安装教程",
@@ -173,13 +253,25 @@ export const artifacts: Entry[] = [
 
 // `heart: true` marks a "support me" link (rendered with a hand-drawn heart) so
 // it reads as a CTA rather than just another profile link.
-export type Link = { label: string; href: string; heart?: boolean };
+// `qrcode: true` flags a link whose details live offline — hovering it pops a
+// little pinned note with the QR image (e.g. 公众号), rather than navigating.
+export type Link = {
+  label: string;
+  href: string;
+  heart?: boolean;
+  qrcode?: string;
+};
 
 export const links: Link[] = [
   { label: "CSDN 博客", href: "https://blog.csdn.net/qq_51646682" },
   { label: "GitHub", href: "https://github.com/yueliusu" },
   { label: "知乎", href: "https://www.zhihu.com/people/jun-zhi-10-52-38" },
   { label: "邮箱", href: "mailto:shachangjunmoxiao@gmail.com" },
+  {
+    label: "公众号",
+    href: "#",
+    qrcode: "/gzh_QRcode.jpg",
+  },
   { label: "关于 & 商务合作", href: "https://blog.csdn.net/qq_51646682/article/details/147541436" },
   { label: "粉丝社群", href: "https://bbs.csdn.net/topics/619710422", heart: true },
 ];
