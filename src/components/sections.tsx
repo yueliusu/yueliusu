@@ -1,193 +1,413 @@
-import { useState, type ReactNode } from "react";
+import { useRef, useState } from "react";
 import {
-  artifacts,
+  articles,
+  categories,
+  contentReviewedAt,
   experience,
-  links,
-  projects,
-  type Entry,
-  type Project,
+  topics,
+  type Article,
 } from "../content";
 import {
-  DateTag,
-  elsewhereLink,
-  HeartDoodle,
-  LinkDoodle,
-  LiveDot,
-  ProjectDetail,
-  SectionLabel,
-  Stamp,
-} from "./desk";
+  archiveHash,
+  displayDate,
+  filterArticles,
+  readFilters,
+  type ArticleFilters,
+} from "../lib/articles";
+import { DateTag, SectionLabel } from "./desk";
 
-/* ------------------------------- list rows -------------------------------- */
+const allFilters: ArticleFilters = { query: "", category: "all", year: "all" };
+const sortedArticles = filterArticles(articles, allFilters);
 
-function RowShell({ children }: { children: ReactNode }) {
+export function ExternalArrow() {
   return (
-    <li className="group grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 py-1.5">
-      {children}
-    </li>
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 16 16"
+      className="external-arrow"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.4"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M4 12 12 4M4 4h8v8" />
+    </svg>
   );
 }
 
-function Label({ children }: { children: string }) {
-  return (
-    <span className="min-w-0 text-[0.95rem] leading-snug text-ink">
-      {children}
-    </span>
-  );
-}
-
-function PlainMeta({ children }: { children: string }) {
-  return (
-    <span className="shrink-0 font-mono text-[0.78rem] text-muted tabular-nums">
-      {children}
-    </span>
-  );
-}
-
-/* -------------------------------- sections -------------------------------- */
-
-export function Experience() {
-  return (
-    <section className="rise mt-9" style={{ animationDelay: "200ms" }}>
-      <SectionLabel>experience</SectionLabel>
-      <ul>
-        {experience.map((r: Entry, i) => (
-          <RowShell key={r.label}>
-            <Label>{r.label}</Label>
-            {i === 0 ? (
-              <Stamp>{r.date}</Stamp>
-            ) : (
-              <PlainMeta>{r.date}</PlainMeta>
-            )}
-          </RowShell>
-        ))}
-      </ul>
-    </section>
-  );
-}
-
-export function Artifacts() {
-  return (
-    <section className="rise mt-9" style={{ animationDelay: "300ms" }}>
-      <SectionLabel>artifacts</SectionLabel>
-      <ul>
-        {artifacts.map((r: Entry, i) => (
-          <RowShell key={r.label}>
-            <a
-              href={r.href}
-              className="group/link relative min-w-0 text-[0.95rem] leading-snug text-ink underline decoration-transparent underline-offset-4 transition-colors duration-200 hover:decoration-ink/40"
-            >
-              {r.label}
-              <LinkDoodle />
-            </a>
-            <DateTag tilt={i % 2 === 0 ? "-rotate-2" : "rotate-1"}>
-              {r.date}
-            </DateTag>
-          </RowShell>
-        ))}
-      </ul>
-    </section>
-  );
-}
-
-/* A project row that toggles its unfolding detail. The row itself is the
-   button (so the whole thing is an easy target); the outbound repo link lives
-   inside the detail, which keeps interactive elements from nesting and gives
-   the closed-source project somewhere to "open" too. Open/closed is owned by
-   the parent so only one row can be expanded at a time. */
-function ProjectRow({
-  r,
-  dateTilt,
-  open,
-  onToggle,
+function ArticleRow({
+  article,
+  featured = false,
 }: {
-  r: Project;
-  dateTilt: string;
-  open: boolean;
-  onToggle: () => void;
+  article: Article;
+  featured?: boolean;
 }) {
-  const panelId = `proj-${r.label.replace(/\W+/g, "-")}`;
   return (
-    <li>
-      <button
-        type="button"
-        aria-expanded={open}
-        aria-controls={panelId}
-        onClick={onToggle}
-        className="group grid w-full cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 py-1.5 text-left"
-      >
-        <span className="min-w-0 text-[0.95rem] leading-snug text-ink underline decoration-transparent underline-offset-4 transition-colors duration-200 group-hover:decoration-ink/40">
-          {r.label}
-        </span>
-        <DateTag tilt={dateTilt}>{r.date}</DateTag>
-      </button>
-      {/* `inert` while folded so the clipped link stays out of tab/AT order. */}
-      <div id={panelId} className={`fold ${open ? "open" : ""}`} inert={!open}>
-        <div>
-          <ProjectDetail
-            blurb={r.blurb ?? ""}
-            stack={r.stack}
-            href={r.href}
-            site={r.site}
-            color={r.color}
-            stamp={r.stamp}
-          />
+    <li className={`reading-row group ${featured ? "is-featured" : ""}`}>
+      <div className="reading-copy">
+        <h3>
+          <a href={article.url} target="_blank" rel="noreferrer">
+            {article.title}
+          </a>
+        </h3>
+        <p>{featured ? article.featuredReason : article.summary}</p>
+        <div className="article-meta">
+          <span>
+            {
+              categories.find((category) => category.id === article.category)
+                ?.label
+            }
+          </span>
+          <span aria-hidden="true">·</span>
+          <span className="whitespace-nowrap">
+            CSDN 原文
+            <ExternalArrow />
+          </span>
         </div>
       </div>
+      <time className="article-date" dateTime={article.publishedAt}>
+        <DateTag tilt="-rotate-2">{displayDate(article.publishedAt)}</DateTag>
+      </time>
     </li>
   );
 }
 
-export function Projects() {
-  // Only one project sits open at a time; clicking the open row closes it.
-  const [openLabel, setOpenLabel] = useState<string | null>(null);
+export function FeaturedArticles() {
   return (
-    <section className="rise mt-9" style={{ animationDelay: "400ms" }}>
-      <SectionLabel>projects</SectionLabel>
-      <ul>
-        {projects.map((r: Project, i) => (
-          <ProjectRow
-            key={r.label}
-            r={r}
-            dateTilt={i % 2 === 0 ? "-rotate-2" : "rotate-1"}
-            open={openLabel === r.label}
-            onToggle={() =>
-              setOpenLabel((cur) => (cur === r.label ? null : r.label))
-            }
-          />
-        ))}
+    <section
+      id="featured"
+      className="page-section"
+      aria-labelledby="featured-title"
+    >
+      <SectionLabel id="featured-title">精选必读</SectionLabel>
+      <p className="section-intro">第一次来，可以从这几篇开始。</p>
+      <ul className="reading-list">
+        {articles
+          .filter((article) => article.featuredReason)
+          .map((article) => (
+            <ArticleRow key={article.id} article={article} featured />
+          ))}
       </ul>
     </section>
   );
 }
 
-export function Elsewhere() {
-  const lastIndex = links.length - 1;
+export function TopicGuide() {
+  const [openId, setOpenId] = useState<string | null>(null);
   return (
-    <section className="rise mt-9" style={{ animationDelay: "500ms" }}>
-      <SectionLabel>elsewhere</SectionLabel>
-      <ul className="flex flex-wrap items-center gap-x-5 gap-y-2">
-        {links.map((l, i) => (
-          <li
-            key={l.label}
-            className={
-              i === lastIndex
-                ? "flex grow items-center justify-between gap-2.5"
-                : undefined
-            }
+    <section
+      id="topics"
+      className="page-section"
+      aria-labelledby="topics-title"
+    >
+      <SectionLabel id="topics-title">按专题阅读</SectionLabel>
+      <p className="section-intro">选一个感兴趣的方向，顺着线索读下去。</p>
+      <div className="topic-list">
+        {topics.map((topic) => {
+          const open = openId === topic.id;
+          const readingPath = topic.articleIds
+            .map((id) => articles.find((article) => article.id === id))
+            .filter((article): article is Article => Boolean(article));
+          return (
+            <div
+              key={topic.id}
+              className={`topic-row ${open ? "is-open" : ""}`}
+            >
+              <h3>
+                <button
+                  type="button"
+                  className="topic-toggle"
+                  aria-expanded={open}
+                  aria-controls={`topic-${topic.id}`}
+                  onClick={() => setOpenId(open ? null : topic.id)}
+                >
+                  <span>
+                    <span className="topic-name">{topic.title}</span>
+                    <span className="topic-description">
+                      {topic.description}
+                    </span>
+                  </span>
+                  <span className="topic-toggle-label">
+                    {open ? "收起" : "阅读路线"}
+                    <svg
+                      aria-hidden="true"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 16 16"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.4"
+                    >
+                      <path d="m4 6 4 4 4-4" />
+                    </svg>
+                  </span>
+                </button>
+              </h3>
+              <div
+                id={`topic-${topic.id}`}
+                className={`fold ${open ? "open" : ""}`}
+                inert={!open}
+              >
+                <div>
+                  <div className="topic-content">
+                    <p className="topic-audience">{topic.audience}</p>
+                    <ol className="reading-path">
+                      {readingPath.map((article) => (
+                        <li key={article.id}>
+                          <a
+                            href={article.url}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            {article.title}
+                            <ExternalArrow />
+                          </a>
+                        </li>
+                      ))}
+                    </ol>
+                    {topic.columns.length > 0 && (
+                      <div className="column-links">
+                        <span>继续读专栏</span>
+                        {topic.columns.map((column) => (
+                          <a
+                            key={column.url}
+                            href={column.url}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            {column.title}
+                            <ExternalArrow />
+                          </a>
+                        ))}
+                      </div>
+                    )}
+                    <div className="topic-footer">
+                      <span>以上链接在 CSDN 打开，访问条件以原文为准。</span>
+                      <a
+                        className="text-action"
+                        href={archiveHash({
+                          ...allFilters,
+                          category: topic.id,
+                        })}
+                      >
+                        浏览本主题文章 <span aria-hidden="true">→</span>
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+export function LatestArticles() {
+  return (
+    <section className="page-section" aria-labelledby="latest-title">
+      <div className="section-heading">
+        <SectionLabel id="latest-title">最近文章</SectionLabel>
+        <a className="text-action" href="#articles">
+          全部 {articles.length} 篇 <span aria-hidden="true">→</span>
+        </a>
+      </div>
+      <p className="section-intro">
+        本站整理于 {displayDate(contentReviewedAt)}，按文章发布时间排序。
+      </p>
+      <ul className="reading-list">
+        {sortedArticles.slice(0, 6).map((article) => (
+          <ArticleRow key={article.id} article={article} />
+        ))}
+      </ul>
+      <a className="archive-link" href="#articles">
+        搜索文章、按主题或年份查找 <span aria-hidden="true">→</span>
+      </a>
+    </section>
+  );
+}
+
+function changeFilters(filters: ArticleFilters, replace = false) {
+  const nextHash = archiveHash(filters);
+  if (replace) {
+    window.history.replaceState(null, "", nextHash);
+    window.dispatchEvent(new HashChangeEvent("hashchange"));
+  } else {
+    window.location.hash = nextHash;
+  }
+}
+
+export function ArticleDirectory({ hash }: { hash: string }) {
+  const filters = readFilters(hash);
+  const matches = filterArticles(articles, filters);
+  const years = [
+    ...new Set(articles.map((article) => article.publishedAt.slice(0, 4))),
+  ]
+    .sort()
+    .reverse();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const hasFilters = Boolean(
+    filters.query || filters.category !== "all" || filters.year !== "all",
+  );
+  const clearFilters = () => {
+    changeFilters(allFilters, true);
+    inputRef.current?.focus();
+  };
+  return (
+    <section id="articles" className="article-directory">
+      <a className="text-action back-link" href="#home">
+        <span aria-hidden="true">←</span> 回到首页
+      </a>
+      <h1 tabIndex={-1}>文章目录</h1>
+      <p className="directory-intro">
+        找到此刻需要的那一篇。这里收录 {articles.length} 篇文章，全文均在 CSDN
+        新标签页打开。
+      </p>
+      <div className="archive-controls">
+        <label className="search-label" htmlFor="article-search">
+          搜索文章
+        </label>
+        <div className="search-box">
+          <svg
+            aria-hidden="true"
+            width="20"
+            height="20"
+            viewBox="0 0 20 20"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
           >
-            <a href={l.href} className={elsewhereLink}>
-              {l.heart && <HeartDoodle />}
-              {l.label}
-              <LinkDoodle />
-            </a>
-            {/* Pin the "around / online" dot to the last link's row so the two
-                always wrap together — never to its own line. The growing li
-                pushes the dot to the right edge regardless of row width. */}
-            {i === lastIndex && <LiveDot />}
+            <circle cx="8.5" cy="8.5" r="5.5" />
+            <path d="m13 13 4 4" />
+          </svg>
+          <input
+            ref={inputRef}
+            id="article-search"
+            type="search"
+            value={filters.query}
+            placeholder="搜索标题、关键词，如 Python、Agent…"
+            onChange={(event) =>
+              changeFilters({ ...filters, query: event.target.value }, true)
+            }
+          />
+        </div>
+        <fieldset className="category-options">
+          <legend className="sr-only">文章主题</legend>
+          {[{ id: "all", label: "全部主题" }, ...categories].map((category) => (
+            <button
+              key={category.id}
+              type="button"
+              aria-pressed={filters.category === category.id}
+              onClick={() =>
+                changeFilters({
+                  ...filters,
+                  category: category.id as ArticleFilters["category"],
+                })
+              }
+            >
+              {category.label}
+            </button>
+          ))}
+        </fieldset>
+        <div className="archive-toolbar">
+          <label htmlFor="article-year">
+            发布年份
+            <select
+              id="article-year"
+              value={filters.year}
+              onChange={(event) =>
+                changeFilters({ ...filters, year: event.target.value })
+              }
+            >
+              <option value="all">全部年份</option>
+              {years.map((year) => (
+                <option key={year} value={year}>
+                  {year} 年
+                </option>
+              ))}
+            </select>
+          </label>
+          {hasFilters && (
+            <button
+              className="text-action"
+              type="button"
+              onClick={clearFilters}
+            >
+              清空筛选
+            </button>
+          )}
+        </div>
+      </div>
+      <h2 className="sr-only">文章查找结果</h2>
+      <div className="result-heading">
+        <p role="status" aria-live="polite">
+          {hasFilters
+            ? `找到 ${matches.length} 篇文章`
+            : `共 ${matches.length} 篇文章`}
+        </p>
+        <span>由新到旧</span>
+      </div>
+      {matches.length > 0 ? (
+        <ul className="reading-list">
+          {matches.map((article) => (
+            <ArticleRow key={article.id} article={article} />
+          ))}
+        </ul>
+      ) : (
+        <div className="empty-results">
+          <h2>还没有找到匹配的文章</h2>
+          <p>试试更短的关键词，或清空主题和年份筛选。</p>
+          <button className="paper-button" type="button" onClick={clearFilters}>
+            查看全部文章
+          </button>
+        </div>
+      )}
+      <p className="catalog-note">
+        这里只收录已整理的文章。
+        <a
+          href="https://blog.csdn.net/qq_51646682"
+          target="_blank"
+          rel="noreferrer"
+        >
+          前往 CSDN 查看完整博客
+          <ExternalArrow />
+        </a>
+      </p>
+    </section>
+  );
+}
+
+export function AboutAuthor() {
+  return (
+    <section
+      id="about"
+      className="page-section about-section"
+      aria-labelledby="about-title"
+    >
+      <SectionLabel id="about-title">写作之外，也是探索</SectionLabel>
+      <p>
+        从编程入门，到 AI
+        应用与计算机科普，希望把每一次学习和实践，变成下一位读者用得上的线索。
+      </p>
+      <ul className="experience-list">
+        {experience.map((entry) => (
+          <li key={entry.label}>
+            <span>{entry.label}</span>
+            <span>{entry.date}</span>
           </li>
         ))}
       </ul>
+      <a
+        className="text-action"
+        href="https://github.com/yueliusu"
+        target="_blank"
+        rel="noreferrer"
+      >
+        在 GitHub 看我的项目与代码
+        <ExternalArrow />
+      </a>
     </section>
   );
 }

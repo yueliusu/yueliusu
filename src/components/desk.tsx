@@ -56,8 +56,10 @@ export function DraggableSticker({
   const release = () => {
     origin.current = null;
     setHeld(false);
-    setSettling(true);
-    setPos({ x: 0, y: 0 }); // springs home via the eased transition below
+    setSettling(
+      window.matchMedia("(prefers-reduced-motion: no-preference)").matches,
+    );
+    setPos({ x: 0, y: 0 }); // CSS returns it home when motion is welcome.
   };
 
   // Tilt with horizontal drag so it swings like it's stuck on by one corner.
@@ -71,20 +73,16 @@ export function DraggableSticker({
       onPointerUp={release}
       onPointerCancel={release}
       onTransitionEnd={() => setSettling(false)}
-      className={`${className ?? ""} touch-none select-none`}
+      className={`draggable-sticker ${className ?? ""} touch-none select-none`}
+      data-held={held}
       style={{
         cursor: held ? "grabbing" : "grab",
         transform: `translate(${pos.x}px, ${pos.y}px) rotate(${tilt}deg) scale(${held ? 1.08 : 1})`,
-        // No transition while held (follows the pointer 1:1); on release the
-        // overshooting ease-back gives the springy "snap home" bounce.
-        transition: held
-          ? "none"
-          : "transform 0.65s cubic-bezier(0.34, 1.56, 0.64, 1)",
         // Stay above everything (incl. the z-40 hover annotations) while
         // grabbed and during the spring-back, so it never slips underneath.
         position: held || settling ? "relative" : undefined,
         zIndex: held || settling ? 100 : undefined,
-        willChange: "transform",
+        willChange: held || settling ? "transform" : undefined,
       }}
     >
       {children}
@@ -190,6 +188,8 @@ export function ProjectDetail({
   stack,
   href,
   site,
+  hrefLabel = "阅读原文",
+  siteLabel = "访问网站",
   color,
   stamp,
 }: {
@@ -197,35 +197,37 @@ export function ProjectDetail({
   stack?: string[];
   href?: string;
   site?: string;
+  hrefLabel?: string;
+  siteLabel?: string;
   color: keyof typeof MARKER;
   stamp: string;
 }) {
   const detailLink =
-    "group/link relative inline-flex items-center font-mono text-[0.7rem] text-soft underline decoration-transparent underline-offset-4 transition-colors duration-200 hover:text-ink hover:decoration-current";
+    "group/link relative inline-flex min-h-11 items-center text-sm text-soft underline decoration-soft/40 underline-offset-4 transition-colors duration-200 hover:text-ink hover:decoration-current";
   return (
     <div className="mb-1 mt-2.5">
-      <p className="framed-note py-2 font-mono text-[0.72rem] font-medium leading-[1.5] text-soft">
+      <p className="framed-note py-3 text-sm leading-[1.8] text-soft">
         {blurb}
       </p>
-      <div className="mt-2 flex items-center gap-3">
+      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
         {stack && stack.length > 0 && (
-          <span className="min-w-0 truncate font-mono text-[0.66rem] text-muted">
+          <span className="min-w-0 text-xs leading-relaxed text-muted">
             {stack.join("  ·  ")}
           </span>
         )}
         {/* gap-5 clears the absolute link arrows from the next link; pr-5
             keeps the rightmost arrow inside the overflow-clipped fold panel. */}
-        <span className="ml-auto flex shrink-0 items-center gap-5 pr-5">
+        <span className="flex flex-wrap items-center gap-x-5 gap-y-1 pr-5 sm:ml-auto">
           <HandStamp color={color}>{stamp}</HandStamp>
           {site && (
             <a href={site} className={detailLink}>
-              Website
+              {siteLabel}
               <LinkDoodle />
             </a>
           )}
           {href && (
             <a href={href} className={detailLink}>
-              GitHub
+              {hrefLabel}
               <LinkDoodle />
             </a>
           )}
@@ -389,6 +391,46 @@ export function LiveDot() {
   );
 }
 
+/* Pinned-note QR popover — hovering a qrcode link peels up a small paper
+   card above it with the QR image, like a sticky pinned next to the word.
+   Carries the same hand-torn border / paper stock / tilt as Annotation so it
+   reads as part of the desk. The card sits over (above) the link rather than
+   inline, so it never nudges the row layout. The parent must carry the
+   `group/link` class. */
+export function QrPopover({ src }: { src: string }) {
+  return (
+    <span
+      aria-hidden="true"
+      className="pointer-events-none absolute bottom-full left-1/2 z-40 mb-2 -translate-x-1/2 -rotate-2 scale-90 opacity-0 transition-[opacity,transform] duration-200 group-hover/link:scale-100 group-hover/link:opacity-100"
+      style={
+        {
+          backgroundColor: "var(--color-paper)",
+          border:
+            "1px solid color-mix(in srgb, var(--color-stamp) 55%, transparent)",
+          // uneven corners read as hand-torn, not a CSS pill
+          borderRadius: "9px 6px 8px 6px / 6px 8px 6px 9px",
+          boxShadow:
+            "0 1px 1px rgba(0,0,0,0.04), 0 6px 14px -6px rgba(0,0,0,0.18)",
+        } as CSSProperties
+      }
+    >
+      {/* Pushpin in the top-left corner, like the note was tacked on. */}
+      <Pushpin />
+      <img
+        src={src}
+        alt=""
+        // squared paper edge + a hair of padding; the QR is the whole point
+        className="block size-28 object-contain p-1.5"
+        width={112}
+        height={112}
+      />
+      <span className="block pb-1 text-center font-hand text-[0.85rem] leading-none text-soft">
+        扫码关注
+      </span>
+    </span>
+  );
+}
+
 /* Shared look for the "elsewhere" links so the plain and copy-to-clipboard
    variants stay in sync. */
 export const elsewhereLink =
@@ -476,13 +518,19 @@ function Spark() {
   );
 }
 
-export function SectionLabel({ children }: { children: string }) {
+export function SectionLabel({
+  children,
+  id,
+}: {
+  children: string;
+  id?: string;
+}) {
   return (
-    <div className="mb-3 flex items-center gap-2">
+    <h2 id={id} className="mb-4 flex items-center gap-2.5">
       <Spark />
-      <span className="font-mono text-[0.7rem] uppercase tracking-[0.22em] text-muted">
+      <span className="text-lg font-medium tracking-[0.05em] text-ink">
         {children}
       </span>
-    </div>
+    </h2>
   );
 }
